@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>JavaScript MQTT WebSocket Example</title>
+	  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.js" type="text/javascript"></script>
+	  <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+	  <style>
+		  .ques {
+    color: darkslateblue;
+}
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 260px;
+  height: 100px;
+}
+
+.switch input {display:none;}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  overflow: hidden;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #f2f2f2;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  z-index: 2;
+  content: "";
+  height: 96px;
+  width: 96px;
+  left: 2px;
+  bottom: 2px;
+  background-color: darkslategrey;
+      -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.22);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.22);
+  -webkit-transition: .4s;
+  transition: all 0.4s ease-in-out;
+}
+.slider:after {
+  position: absolute;
+  left: 0;
+  z-index: 1;
+  content: "ON";
+    font-size: 45px;
+    text-align: left !important;
+    line-height: 95px;
+  padding-left: 0;
+    width: 260px;
+    color: #fff;
+    height: 100px;
+    border-radius: 100px;
+    background-color: #ff6418;
+    -webkit-transform: translateX(-160px);
+    -ms-transform: translateX(-160px);
+    transform: translateX(-160px);
+    transition: all 0.4s ease-in-out;
+}
+
+input:checked + .slider:after {
+  -webkit-transform: translateX(0px);
+  -ms-transform: translateX(0px);
+  transform: translateX(0px);
+  /*width: 235px;*/
+  padding-left: 25px;
+}
+
+input:checked + .slider:before {
+  background-color: #fff;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(160px);
+  -ms-transform: translateX(160px);
+  transform: translateX(160px);
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 100px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+.absolute-no {
+	position: absolute;
+	left: 0;
+	color: darkslategrey;
+	text-align: right !important;
+    font-size: 45px;
+    width: calc(100% - 25px);
+    height: 100px;
+    line-height: 95px;
+    cursor: pointer;
+}
+	  </style>
+	 <script type = "text/javascript" language = "javascript">
+	 	var result;
+		var mqtt;
+		var reconnectTimeout = 2000;
+		var host="192.168.1.22"; //change this
+		//var host="iot.eclipse.org"
+		//var port=80
+		var port=1884;
+		i=0;
+		function onFailure(message) {
+			console.log("Connection Attempt to Host "+host+"Failed");
+			setTimeout(MQTTconnect, reconnectTimeout);
+        }
+		function onMessageArrived(msg){
+			result=msg.payloadString;
+			out_msg="Message received "+msg+"<br>";
+			out_msg=out_msg+"Message received Topic "+msg.destinationName;
+			console.log(out_msg);
+			if(msg.destinationName=="/temperature"){
+				document.getElementById("dataT").innerHTML=result;
+			}else if(msg.destinationName=="/humidity"){
+				document.getElementById("dataH").innerHTML=result;
+			}
+			else if(msg.destinationName=="/temperature2"){
+				document.getElementById("dataT2").innerHTML=result;
+			}else if(msg.destinationName=="/humidity2"){
+				document.getElementById("dataH2").innerHTML=result;
+			}
+		}
+		
+	 	function onConnect() {
+	  // Once a connection has been made, make a subscription and send a message.
+	
+		console.log("Connected ");
+		mqtt.subscribe("/temperature");
+		mqtt.subscribe("/humidity");
+		mqtt.subscribe("/temperature2");
+		mqtt.subscribe("/humidity2");
+		
+
+	  }
+    function sendButton(val){
+      message = new Paho.MQTT.Message(val);
+      message.destinationName = "/button";
+      mqtt.send(message);
+    }
+	  function MQTTconnect() {
+		console.log("connecting to "+ host +" "+ port);
+		mqtt = new Paho.MQTT.Client(host,port,"clientjs");
+		//document.write("connecting to "+ host);
+		var options = {
+			timeout: 3,
+			onSuccess: onConnect,
+			onFailure: onFailure,
+			 };
+		mqtt.onMessageArrived = onMessageArrived
+		
+		mqtt.connect(options); //connect
+		}
+	 
+    </script>
+    <script>
+     	function handleButton(){
+			var isChecked=document.getElementById("checkBox").checked;
+			if(isChecked==true){
+        sendButton('on');
+      }else{
+        sendButton('off');
+      }
+		}
+    </script>
+   </head>
+     <body>
+		 <p>Nhiệt độ  hiện tại của sensor 1 là</p>
+   <p id="dataT"></p>
+   <br>
+   <p>Độ ẩm hiện tại của sensor 1 là</p>
+   <p id="dataH"></p>
+   <br>
+   <p>Nhiệt độ  hiện tại của sensor 2 là</p>
+   <p id="dataT2"></p>
+   <br>
+   <p>Độ ẩm hiện tại của sensor 2 là</p>
+   <p id="dataH2"></p>
+   
+   <!-- Material switch -->
+   <label class="switch" for="checkBox">
+	<input type="checkbox" id="checkBox" onClick ="handleButton()" name="checkBox">
+	<span class="slider round"></span>
+	<span class="absolute-no">OFF</span>
+  </label>
+ 	<script>
+	MQTTconnect();
+	</script>
+   </body>	
+</html>
